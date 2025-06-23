@@ -109,7 +109,7 @@ def create_plotly_chart(df, nucleus, thresholds=None, res_range=None):
 
     return fig
 
-def create_matplotlib_plot(df, nucleus, annotate=False, res_range=None):
+def create_matplotlib_plot(df, nucleus, annotate=False, res_range=None, thresholds=None):
     df = df[df["Residue"] >= 1]
     df = df.sort_values(["Residue", "Atom"])
     residues = sorted(df["Residue"].unique())
@@ -123,7 +123,7 @@ def create_matplotlib_plot(df, nucleus, annotate=False, res_range=None):
 
     colors = plt.cm.get_cmap('tab20').colors
     scale_factor = 0.4 if nucleus == "C" else 0.25
-    fig_width = min(max(8, len(full_range) * scale_factor), 20)  # caps width at 20 inches
+    fig_width = min(max(8, len(full_range) * scale_factor), 20)
     fig, ax = plt.subplots(figsize=(fig_width, 6))
 
     for k, g in groupby(enumerate(missing_residues), lambda ix: ix[0] - ix[1]):
@@ -158,11 +158,8 @@ def create_matplotlib_plot(df, nucleus, annotate=False, res_range=None):
     ax.tick_params(axis='x', rotation=45)
     ax.grid(axis='x', linestyle='--', alpha=0.5)
 
-    if annotate:
-        mean_csp = df["CSP"].mean()
-        std_csp = df["CSP"].std()
-        threshold1 = mean_csp + std_csp
-        threshold2 = mean_csp + 2 * std_csp
+    if annotate and thresholds:
+        threshold1, threshold2 = thresholds
         ax.axhline(y=threshold1, color="red", linestyle="--", linewidth=1.5)
         ax.text(min_res, threshold1 + 0.01, f"1σ: {threshold1:.2f}", color="red", fontsize=10, va="bottom")
         ax.axhline(y=threshold2, color="firebrick", linestyle=":", linewidth=1.5)
