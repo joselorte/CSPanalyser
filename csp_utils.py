@@ -122,7 +122,8 @@ def create_matplotlib_plot(df, nucleus, annotate=False, res_range=None):
     missing_residues = sorted(set(full_range) - set(residues))
 
     colors = plt.cm.get_cmap('tab20').colors
-    fig_width = max(8, len(full_range) * (0.5 if nucleus == "C" else 0.3))
+    scale_factor = 0.4 if nucleus == "C" else 0.25
+    fig_width = min(max(8, len(full_range) * scale_factor), 20)  # caps width at 20 inches
     fig, ax = plt.subplots(figsize=(fig_width, 6))
 
     for k, g in groupby(enumerate(missing_residues), lambda ix: ix[0] - ix[1]):
@@ -173,4 +174,3 @@ def create_matplotlib_plot(df, nucleus, annotate=False, res_range=None):
     plt.close()
     buf.seek(0)
     return buf
-
