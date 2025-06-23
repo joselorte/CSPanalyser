@@ -33,9 +33,13 @@ if initial_file and final_file and nucleus:
         (df["Atom"].isin(selected_atoms))
     ]
 
-    # --- ANNOTATION ---
-    threshold1 = df["CSP"].mean() + df["CSP"].std()
-    threshold2 = df["CSP"].mean() + 2 * df["CSP"].std()
+    # --- THRESHOLDS BASED ON FULL DATA ---
+    mean_csp = df["CSP"].mean()
+    std_csp = df["CSP"].std()
+    threshold1 = mean_csp + std_csp
+    threshold2 = mean_csp + 2 * std_csp
+
+    # --- ANNOTATION RESIDUE HIGHLIGHTING ---
     level1_df = filtered_df[filtered_df["CSP"] > threshold1]
     level2_df = filtered_df[filtered_df["CSP"] > threshold2]
 
@@ -43,10 +47,10 @@ if initial_file and final_file and nucleus:
     st.markdown(f"""
     - **Residue range:** {selected_range[0]} to {selected_range[1]}
     - **Atoms included:** {', '.join(selected_atoms)}
-    - **CSP thresholds:**
-        - Level 1: CSP > {threshold1:.3f}
-        - Level 2: CSP > {threshold2:.3f}
-    - **Grey shaded regions:** Unassigned residues and residue numbers without CSP data
+    - **CSP thresholds (calculated using all CSP values):**
+        - Level 1: > {threshold1:.3f}
+        - Level 2: > {threshold2:.3f}
+    - **Grey shaded regions:** Residues not found in either or both files
     """)
 
     st.markdown("🔬 **Highly Perturbed Residues:**")
@@ -64,29 +68,42 @@ if initial_file and final_file and nucleus:
 
     # --- INTERACTIVE PLOT ---
     st.subheader("📊 CSP Plot (Interactive)")
-    fig = create_plotly_chart(filtered_df, nucleus, thresholds=(threshold1, threshold2), res_range=selected_range)
+    fig = create_plotly_chart(
+        filtered_df,
+        nucleus,
+        thresholds=(threshold1, threshold2),
+        res_range=selected_range
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     with st.expander("🧠 What Does This Plot Show?", expanded=False):
         st.markdown("""
-        This bar chart visualizes **chemical shift perturbation (CSP)** values across selected residues and atoms, comparing two NMR conditions.
+        This bar chart visualizes **chemical shift perturbation (CSP)** values across selected residues and atoms.
 
-        - **X-axis:** Residue number, filtered based on your selection.
-        - **Y-axis:** CSP magnitude, computed as  
-          *CSP = √((ΔH)² + (α × ΔX)²)*  
-          where α is a nucleus-specific scaling factor (¹⁵N: 0.17, ¹³C: 0.251).
-        - **Bar colors:** Distinguish atom names (for ¹³C); uniform color is used for ¹⁵N.
-        - **Threshold lines:**  
-          - Red dashed line = mean + 1σ  
-          - Red dotted line = mean + 2σ
-        - **Grey shaded areas:** Mark missing or unassigned residues—either because data wasn't present in your uploaded `.xpk` files or the residue was skipped during acquisition.
+        - **X-axis:** Residue number (based on your slider).
+        - **Y-axis:** CSP = √((ΔH)² + α×(ΔX)²), where α = 0.17 (¹⁵N) or 0.251 (¹³C)
+        - **Bar colors:** Atom names (¹³C) or uniform (¹⁵N)
+        - **Red dashed line:** mean + 1σ
+        - **Red dotted line:** mean + 2σ
+        - **Grey shading:** Residues not assigned or missing in input files
         """)
 
-    # --- HIGH-RES PLOT DOWNLOADS ---
+    # --- HIGH-RES DOWNLOADABLE PLOTS ---
     st.subheader("🖼️ Download High-Resolution Plots")
-
-    img_buf_clean = create_matplotlib_plot(filtered_df, nucleus, annotate=False, res_range=selected_range)
-    img_buf_annotated = create_matplotlib_plot(filtered_df, nucleus, annotate=True, res_range=selected_range)
+    img_buf_clean = create_matplotlib_plot(
+        filtered_df,
+        nucleus,
+        annotate=False,
+        res_range=selected_range,
+        thresholds=(threshold1, threshold2)
+    )
+    img_buf_annotated = create_matplotlib_plot(
+        filtered_df,
+        nucleus,
+        annotate=True,
+        res_range=selected_range,
+        thresholds=(threshold1, threshold2)
+    )
 
     col1, col2 = st.columns(2)
     with col1:
@@ -104,9 +121,13 @@ if initial_file and final_file and nucleus:
             mime="image/png"
         )
 
-    # --- RESULTS TABLE + DOWNLOAD ---
+    # --- DATA TABLE + CSV EXPORT ---
     st.subheader("📋 CSP Table")
     st.dataframe(filtered_df, use_container_width=True)
-
     csv = filtered_df.to_csv(index=False).encode("utf-8")
-    st.download_button("📥 Download Filtered CSV", data=csv, file_name="filtered_csp.csv", mime="text/csv")
+    st.download_button(
+        "📥 Download Filtered CSV",
+        data=csv,
+        file_name="filtered_csp.csv",
+        mime="text/csv"
+    )
