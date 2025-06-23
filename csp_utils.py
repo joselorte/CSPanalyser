@@ -50,7 +50,7 @@ def run_csp_analysis(initial_file, final_file, nucleus, x_scale):
     df.sort_values(["Residue", "Atom"], inplace=True)
     return df
 
-def create_plotly_chart(df, nucleus, threshold=None, res_range=None):
+def create_plotly_chart(df, nucleus, thresholds=None, res_range=None):
     min_res = res_range[0] if res_range else int(df["Residue"].min())
     max_res = res_range[1] if res_range else int(df["Residue"].max())
     full_range = range(min_res, max_res + 1)
@@ -89,14 +89,22 @@ def create_plotly_chart(df, nucleus, threshold=None, res_range=None):
             line_width=0,
         )
 
-    if threshold:
+    if thresholds:
         fig.add_shape(
             type="line",
             x0=min_res - 1,
             x1=max_res + 1,
-            y0=threshold,
-            y1=threshold,
-            line=dict(color="red", width=2, dash="dash"),
+            y0=thresholds[0],
+            y1=thresholds[0],
+            line=dict(color="red", width=2, dash="dash")
+        )
+        fig.add_shape(
+            type="line",
+            x0=min_res - 1,
+            x1=max_res + 1,
+            y0=thresholds[1],
+            y1=thresholds[1],
+            line=dict(color="firebrick", width=2, dash="dot")
         )
 
     return fig
@@ -150,13 +158,14 @@ def create_matplotlib_plot(df, nucleus, annotate=False, res_range=None):
     ax.grid(axis='x', linestyle='--', alpha=0.5)
 
     if annotate:
-        threshold = df["CSP"].mean() + df["CSP"].std()
-        ax.axhline(y=threshold, color="red", linestyle="--", linewidth=1.5)
-        ax.text(
-            min_res, threshold + 0.01,
-            f"Threshold: {threshold:.2f}",
-            color="red", fontsize=10, va="bottom"
-        )
+        mean_csp = df["CSP"].mean()
+        std_csp = df["CSP"].std()
+        threshold1 = mean_csp + std_csp
+        threshold2 = mean_csp + 2 * std_csp
+        ax.axhline(y=threshold1, color="red", linestyle="--", linewidth=1.5)
+        ax.text(min_res, threshold1 + 0.01, f"1σ: {threshold1:.2f}", color="red", fontsize=10, va="bottom")
+        ax.axhline(y=threshold2, color="firebrick", linestyle=":", linewidth=1.5)
+        ax.text(min_res, threshold2 + 0.01, f"2σ: {threshold2:.2f}", color="firebrick", fontsize=10, va="bottom")
 
     plt.tight_layout()
     buf = BytesIO()
@@ -164,3 +173,4 @@ def create_matplotlib_plot(df, nucleus, annotate=False, res_range=None):
     plt.close()
     buf.seek(0)
     return buf
+
