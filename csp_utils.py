@@ -47,8 +47,10 @@ def run_csp_analysis(initial_file, final_file, nucleus, x_scale):
                 })
 
     df = pd.DataFrame(results)
+    df = df[df["Residue"] >= 1]  # ❗ Exclude any invalid residue numbers (e.g. -1, 0)
     df.sort_values(["Residue", "Atom"], inplace=True)
     return df
+
 
 def create_plotly_chart(df, nucleus, thresholds=None, res_range=None):
     min_res = res_range[0] if res_range else int(df["Residue"].min())
