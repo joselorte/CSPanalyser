@@ -44,7 +44,7 @@ def parse_peaklist(file_obj, format="xpk"):
         lines = lines[6:]
         for line in lines:
             parts = line.strip().split()
-            if len(parts) < 11 or parts[1] == '{}':
+            if len(parts) < 17 or parts[1] == '{}':
                 continue
             try:
                 label = parts[1]
@@ -66,7 +66,7 @@ def parse_peaklist(file_obj, format="xpk"):
     elif format == "nmrfx":
         for line in lines:
             parts = line.strip().split()
-            if len(parts) < 5:
+            if len(parts) < 11:
                 continue
             try:
                 label = parts[1]
