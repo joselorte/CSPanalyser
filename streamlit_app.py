@@ -14,6 +14,7 @@ st.title("🧪 CSP & Intensity Analyser")
 
 with st.sidebar:
     st.header("📂 Upload Files")
+    format = st.selectbox("Peaklist Format", ["xpk", "nmrfx", "sparky"])
     initial_file = st.file_uploader("Initial .xpk File", type="xpk")
     final_file = st.file_uploader("Final .xpk File", type="xpk")
     nucleus = st.selectbox("Nucleus Type", ["N", "C"])
