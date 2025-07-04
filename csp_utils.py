@@ -7,8 +7,8 @@ from io import BytesIO
 from itertools import groupby
 from operator import itemgetter
 
-# --- Unified Parser ---
-def parse_xpk_extended(file_obj):
+# --- Unified Parser --- NOT IN USE ANYMORE
+def parse_peaklist(file_obj):
     file_obj.seek(0)  # 🔄 Reset pointer before reading
     lines = file_obj.read().decode("utf-8").splitlines()[6:]
     data = []
@@ -34,11 +34,85 @@ def parse_xpk_extended(file_obj):
             continue
     return pd.DataFrame(data)
 
+def parse_peaklist(file_obj, format="xpk"):
+    import pandas as pd
+    file_obj.seek(0)
+    lines = file_obj.read().decode("utf-8").splitlines()
+    data = []
+
+    if format == "xpk":
+        lines = lines[6:]
+        for line in lines:
+            parts = line.strip().split()
+            if len(parts) < 17 or parts[1] == '{}':
+                continue
+            try:
+                label = parts[1]
+                residue = int(label.split('{')[1].split('.')[0])
+                atom = label.split('{')[1].split('.')[1].rstrip('}')
+                h = float(parts[2])
+                x = float(parts[9])
+                intensity = float(parts[16])
+                data.append({
+                    "Residue": residue,
+                    "Atom": atom,
+                    "H": h,
+                    "X": x,
+                    "Intensity": intensity
+                })
+            except:
+                continue
+
+    elif format == "nmrfx":
+        for line in lines:
+            parts = line.strip().split()
+            if len(parts) < 5:
+                continue
+            try:
+                residue = int(parts[0])
+                atom = parts[1]
+                h = float(parts[2])
+                x = float(parts[3])
+                intensity = float(parts[4])
+                data.append({
+                    "Residue": residue,
+                    "Atom": atom,
+                    "H": h,
+                    "X": x,
+                    "Intensity": intensity
+                })
+            except:
+                continue
+
+    elif format == "sparky":
+        for line in lines:
+            parts = line.strip().split()
+            if len(parts) < 4:
+                continue
+            try:
+                h = float(parts[0])
+                x = float(parts[1])
+                label = parts[2]
+                residue = int(''.join(filter(str.isdigit, label)))
+                atom = ''.join(filter(str.isalpha, label))
+                intensity = float(parts[3]) if len(parts) >= 4 else 0.0
+                data.append({
+                    "Residue": residue,
+                    "Atom": atom,
+                    "H": h,
+                    "X": x,
+                    "Intensity": intensity
+                })
+            except:
+                continue
+
+    return pd.DataFrame(data)
+
 
 # --- CSP Analysis ---
 def run_csp_analysis(initial_file, final_file, nucleus, x_scale):
-    df_init = parse_xpk_extended(initial_file)
-    df_final = parse_xpk_extended(final_file)
+    df_init = parse_peaklist(initial_file)
+    df_final = parse_peaklist(final_file)
 
     merged = pd.merge(
         df_init, df_final,
@@ -58,8 +132,8 @@ def run_csp_analysis(initial_file, final_file, nucleus, x_scale):
 
 # --- Intensity Analysis ---
 def run_intensity_analysis(initial_file, final_file, normalize_residue, final_scale):
-    df_init = parse_xpk_extended(initial_file)
-    df_final = parse_xpk_extended(final_file)
+    df_init = parse_peaklist(initial_file)
+    df_final = parse_peaklist(final_file)
 
     df_init = df_init[df_init["Residue"] >= 1]
     df_final = df_final[df_final["Residue"] >= 1]
