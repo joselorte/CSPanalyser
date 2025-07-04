@@ -69,11 +69,12 @@ def parse_peaklist(file_obj, format="xpk"):
             if len(parts) < 5:
                 continue
             try:
-                residue = int(parts[0])
-                atom = parts[1]
+                label = parts[1]
+                residue = int(label.split('.')[0])
+                atom = label.split('.')[1]
                 h = float(parts[2])
-                x = float(parts[3])
-                intensity = float(parts[4])
+                x = float(parts[6])
+                intensity = float(parts[10])
                 data.append({
                     "Residue": residue,
                     "Atom": atom,
